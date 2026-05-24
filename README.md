@@ -89,6 +89,52 @@ Die konkrete Entity-Namensgebung hängt von der jeweiligen Home-Assistant-Konfig
 
 Ohne gültige Solar-Ertragsprognose sollte die Steuerung keine aggressive Netzlade- oder Entladestrategie anhand zukünftiger PV-Erträge ausführen.
 
+## Installation dieser Integration
+
+Aktuell ist dies eine Custom Integration im frühen Entwicklungsstand. Installation manuell:
+
+1. Repository herunterladen oder klonen.
+2. Den Ordner `custom_components/gen24_energy_control` nach Home Assistant kopieren:
+
+   ```text
+   /config/custom_components/gen24_energy_control
+   ```
+
+3. Home Assistant neu starten.
+4. **Einstellungen** → **Geräte & Dienste** → **Integration hinzufügen** öffnen.
+5. **GEN24 Energy Control** auswählen.
+6. Sensoren konfigurieren:
+   - GEN24-Wechselrichter-URL, z.B. `http://192.168.178.135`
+   - EPEX-Spot-Total-Price-Sensor, z.B. `sensor.epex_spot_data_total_price`
+   - mindestens einen Solar-Forecast-Sensor
+   - optional Batterie-SOC- und Hausverbrauchssensor
+
+Standardmäßig ist das Schreiben auf den Wechselrichter deaktiviert. Erst wenn `write_enabled` aktiv ist, darf der Service `gen24_energy_control.apply_policy` den berechneten Sollwert per Fronius-API nach `/config/timeofuse` schreiben.
+
+## Aktueller Funktionsumfang
+
+Die erste Version enthält bewusst eine konservative Kernlogik:
+
+- Config Flow für die wichtigsten Home-Assistant-Entities
+- Sensor `Battery Policy` mit Modus, Grund und Validitätsattributen
+- Sensor `Desired Discharge Limit` für den aktuell berechneten Entlade-Sollwert
+- Parser für 15-Minuten-Preis-Slots aus `mampfes/ha_epex_spot`
+- Solar-Forecast-Anbindung über konfigurierbare Sensoren
+- konservative Planungslogik:
+  - fehlende Preise → sicherer Fallback, kein preisgetriebener Write
+  - günstiger Preis + hohe PV-Prognose → Entladung blockieren
+  - teurer Preis → Standard-Entladegrenze erlauben
+  - SOC unter Minimum → Entladung blockieren
+- Service `gen24_energy_control.apply_policy` für das spätere gezielte Schreiben auf den GEN24
+
+Noch nicht enthalten:
+
+- EV-/Zappi-Orchestrierung
+- Fahrzeugerkennung e-2008 vs. Seat Mii
+- Stellantis-Wakeup-Sequenz
+- persistente Ownership-/Drift-Erkennung für externe WR-Schreibzugriffe
+- UI-Dashboard
+
 ## Erwartete Home-Assistant-Datenquellen
 
 Dieses Projekt ist für eine spätere Steuerlogik rund um folgende Datenquellen gedacht:
@@ -115,4 +161,4 @@ Damit bleibt nachvollziehbar, warum ein bestimmter Lade- oder Entladewert gesetz
 
 ## Status
 
-Frühe Projektphase. README, Architektur und Home-Assistant-Bausteine werden schrittweise ergänzt.
+Frühe, lauffähige Custom-Integration mit getesteter Kernlogik. Die nächsten Schritte sind ein Test in einer Home-Assistant-Entwicklungsinstanz, danach Ownership-/Drift-Erkennung und Erweiterung um EV-/Zappi-Planung.

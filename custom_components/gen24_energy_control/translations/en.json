@@ -1,0 +1,25 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "GEN24 Energy Control",
+        "description": "Configure conservative Home Assistant orchestration for Fronius GEN24 battery policy.",
+        "data": {
+          "inverter_url": "GEN24 inverter URL",
+          "price_sensor": "EPEX Spot total-price sensor",
+          "solar_forecast_sensors": "Solar forecast sensors",
+          "battery_soc_sensor": "Battery SOC sensor",
+          "house_load_sensor": "House-load sensor",
+          "write_enabled": "Allow inverter writes"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "GEN24 Energy Control options"
+      }
+    }
+  }
+}

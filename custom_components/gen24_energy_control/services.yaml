@@ -1,0 +1,10 @@
+apply_policy:
+  name: Apply current policy
+  description: Apply the currently calculated battery policy to the configured GEN24 inverter. Does nothing unless write_enabled is true and the policy is writable.
+  fields:
+    entry_id:
+      name: Config entry ID
+      description: Optional config entry ID. If omitted, all write-enabled entries are considered.
+      required: false
+      selector:
+        text:
