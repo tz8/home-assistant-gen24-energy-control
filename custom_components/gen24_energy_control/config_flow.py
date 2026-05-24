@@ -60,11 +60,11 @@ class Gen24EnergyControlOptionsFlow(config_entries.OptionsFlow):
     """Handle options."""
 
     def __init__(self, config_entry):
-        self.config_entry = config_entry
+        self._config_entry = config_entry
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         """Manage options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
-        defaults = dict(self.config_entry.data) | dict(self.config_entry.options)
+        defaults = dict(self._config_entry.data) | dict(self._config_entry.options)
         return self.async_show_form(step_id="init", data_schema=_schema(defaults))
