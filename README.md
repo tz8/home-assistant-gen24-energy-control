@@ -48,6 +48,32 @@ data:
 
 Ohne gültige Preis-Slots sollte die Steuerung keine aggressive Netzlade- oder Preisoptimierungslogik ausführen.
 
+## Abhängigkeit: Solar-Ertragsprognose
+
+Für die Planung von Batterieladung, Entladefreigaben und flexiblen Verbrauchern wird zusätzlich mindestens eine Solar-Ertragsprognose benötigt.
+
+Unterstützte bzw. vorgesehene Integrationen:
+
+- **Open-Meteo Solar Forecast**  
+  <https://github.com/rany2/ha-open-meteo-solar-forecast>
+- **Solcast PV Forecast**  
+  <https://github.com/BJReplay/ha-solcast-solar>
+
+Empfehlung:
+
+- **Solcast** für kurzfristige Entscheidungen heute und morgen, wenn verfügbar.
+- **Open-Meteo Solar Forecast** als freie und robuste Quelle, insbesondere für längere Vorschauen.
+- Wenn beide Integrationen vorhanden sind, kann die Steuerung Solcast für den Nahbereich und Open-Meteo für den erweiterten Planungshorizont nutzen.
+
+Die konkrete Entity-Namensgebung hängt von der jeweiligen Home-Assistant-Konfiguration ab. Erwartet wird mindestens eine Prognose für:
+
+- erwartete PV-Erzeugung heute
+- erwartete PV-Erzeugung morgen
+- optional: stündliche oder viertelstündliche Forecast-Werte
+- optional: Prognose für weitere Tage
+
+Ohne gültige Solar-Ertragsprognose sollte die Steuerung keine aggressive Netzlade- oder Entladestrategie anhand zukünftiger PV-Erträge ausführen.
+
 ## Installation der EPEX Spot Integration über HACS
 
 Die folgenden Schritte orientieren sich an der Installationsempfehlung aus dem README des EPEX-Spot-Projekts.
@@ -93,7 +119,7 @@ Dieses Projekt ist für eine spätere Steuerlogik rund um folgende Datenquellen 
 - Fronius GEN24 Hybrid-Wechselrichter
 - Fronius/BYD-Batterie-SOC und Lade-/Entladeleistung
 - `mampfes/ha_epex_spot` für dynamische Strompreise
-- PV-Prognose, z.B. Solcast oder Open-Meteo Solar Forecast
+- `rany2/ha-open-meteo-solar-forecast` und/oder `BJReplay/ha-solcast-solar` für Solar-Ertragsprognosen
 - Hausverbrauch / Netzbezug / Einspeisung
 - optionale flexible Verbraucher wie EV-Ladung, Wallbox, Wärmeerzeuger oder Haushaltsgeräte
 
