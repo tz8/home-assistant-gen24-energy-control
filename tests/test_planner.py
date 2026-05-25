@@ -68,3 +68,22 @@ def test_planner_refuses_price_strategy_without_valid_slots():
     assert decision.discharge_limit_w == 2800
     assert decision.mode == "safe_fallback"
     assert decision.write_allowed is False
+
+
+def test_planner_waits_for_all_sources_before_writing():
+    decision = plan_battery_policy(
+        PlannerInputs(
+            now=datetime.fromisoformat("2026-05-25T10:35:00+02:00"),
+            price_slots=_slots(),
+            battery_soc_percent=45,
+            pv_forecast_remaining_kwh=None,
+            house_load_w=900,
+            export_limit_w=7000,
+            default_discharge_limit_w=2800,
+            min_soc_percent=15,
+        )
+    )
+
+    assert decision.discharge_limit_w == 2800
+    assert decision.mode == "waiting_for_sources"
+    assert decision.write_allowed is False

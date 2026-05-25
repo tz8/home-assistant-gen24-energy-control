@@ -16,6 +16,8 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     ATTR_EFFECTIVE_WRITE_ALLOWED,
+    ATTR_INPUT_SOURCES_READY,
+    ATTR_MISSING_INPUT_SOURCES,
     ATTR_MODE,
     ATTR_POLICY_WRITABLE,
     ATTR_PRICE_SOURCE_VALID,
@@ -99,6 +101,7 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
             "house_load_w": house_load,
             "pv_forecast_remaining_kwh": pv_forecast,
             "write_enabled": config.get(CONF_WRITE_ENABLED, DEFAULT_WRITE_ENABLED),
+            "missing_input_sources": _missing_input_sources(len(price_slots), soc, house_load, pv_forecast),
         }
 
 
@@ -141,6 +144,20 @@ def _solar_forecast_remaining_kwh(hass: HomeAssistant, entity_ids: list[str] | s
     return max(values)
 
 
+def _missing_input_sources(price_slot_count: int, battery_soc: float | None, house_load: float | None, pv_forecast: float | None) -> list[str]:
+    """Return configured inputs that are not ready enough for write decisions."""
+    missing: list[str] = []
+    if price_slot_count < 2:
+        missing.append("price_slots")
+    if battery_soc is None:
+        missing.append("battery_soc")
+    if house_load is None:
+        missing.append("house_load")
+    if pv_forecast is None or pv_forecast < 0:
+        missing.append("solar_forecast")
+    return missing
+
+
 class Gen24PolicySensor(CoordinatorEntity, SensorEntity):
     """Current policy sensor."""
 
@@ -161,11 +178,14 @@ class Gen24PolicySensor(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         decision = self.coordinator.data["decision"]
         write_enabled = self.coordinator.data["write_enabled"]
+        missing_input_sources = self.coordinator.data["missing_input_sources"]
         return {
             ATTR_REASON: decision.reason,
             ATTR_POLICY_WRITABLE: decision.write_allowed,
             ATTR_WRITE_ENABLED: write_enabled,
             ATTR_EFFECTIVE_WRITE_ALLOWED: write_enabled and decision.write_allowed,
+            ATTR_INPUT_SOURCES_READY: not missing_input_sources,
+            ATTR_MISSING_INPUT_SOURCES: missing_input_sources,
             ATTR_PRICE_SOURCE_VALID: decision.price_source_valid,
             ATTR_SOLAR_FORECAST_VALID: decision.solar_forecast_valid,
             "price_slot_count": self.coordinator.data["price_slot_count"],

@@ -61,6 +61,17 @@ def plan_battery_policy(inputs: PlannerInputs) -> BatteryPolicyDecision:
             solar_forecast_valid=forecast_valid,
         )
 
+    if inputs.battery_soc_percent is None or inputs.house_load_w is None or not forecast_valid:
+        return BatteryPolicyDecision(
+            mode="waiting_for_sources",
+            reason="One or more configured input sources are not ready; keep default discharge policy and do not write.",
+            discharge_limit_w=inputs.default_discharge_limit_w,
+            charge_limit_w=None,
+            write_allowed=False,
+            price_source_valid=True,
+            solar_forecast_valid=forecast_valid,
+        )
+
     if inputs.battery_soc_percent is not None and inputs.battery_soc_percent <= inputs.min_soc_percent:
         return BatteryPolicyDecision(
             mode="protect_min_soc",
