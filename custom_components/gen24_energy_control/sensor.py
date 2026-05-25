@@ -11,6 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfPower
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
@@ -47,6 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     coordinator = Gen24EnergyCoordinator(hass, entry)
     hass.data.setdefault(DOMAIN, {}).setdefault(entry.entry_id, {})["coordinator"] = coordinator
     await coordinator.async_config_entry_first_refresh()
+    _async_track_configured_sources(hass, entry, coordinator)
     async_add_entities(
         [
             Gen24PolicySensor(coordinator, entry),
@@ -64,6 +66,33 @@ def _device_info(entry: ConfigEntry) -> dict[str, Any]:
         "model": "GEN24 Plus",
         "name": entry.title or "GEN24 Energy Control",
     }
+
+
+def _async_track_configured_sources(hass: HomeAssistant, entry: ConfigEntry, coordinator: "Gen24EnergyCoordinator") -> None:
+    """Refresh promptly when configured source sensors become ready or change."""
+    config = dict(entry.data) | dict(entry.options)
+    entity_ids = _configured_source_entity_ids(config)
+    if not entity_ids:
+        return
+
+    async def _source_changed(_event) -> None:
+        await coordinator.async_request_refresh()
+
+    entry.async_on_unload(async_track_state_change_event(hass, entity_ids, _source_changed))
+
+
+def _configured_source_entity_ids(config: dict[str, Any]) -> list[str]:
+    """Return all configured source entity IDs for event tracking."""
+    entity_ids: list[str] = []
+    for key in (CONF_PRICE_SENSOR, CONF_BATTERY_SOC_SENSOR, CONF_HOUSE_LOAD_SENSOR):
+        entity_id = config.get(key)
+        if entity_id:
+            entity_ids.append(entity_id)
+    forecast_entities = config.get(CONF_SOLAR_FORECAST_SENSORS, [])
+    if isinstance(forecast_entities, str):
+        forecast_entities = [forecast_entities]
+    entity_ids.extend(entity_id for entity_id in forecast_entities if entity_id)
+    return sorted(set(entity_ids))
 
 
 class Gen24EnergyCoordinator(DataUpdateCoordinator):
