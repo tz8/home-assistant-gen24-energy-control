@@ -38,6 +38,22 @@ def _schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
     )
 
 
+def _forecast_entity_error(user_input: dict[str, Any]) -> str | None:
+    """Validate the ordered solar forecast entity list.
+
+    The UI mirrors the clear Solar Forecast Card convention: one ordered list of
+    day sensors, not seven separate fields.
+    """
+    forecast_entities = user_input.get(CONF_SOLAR_FORECAST_SENSORS) or []
+    if isinstance(forecast_entities, str):
+        forecast_entities = [forecast_entities]
+    if len(forecast_entities) < 2:
+        return "forecast_entities_too_few"
+    if len(forecast_entities) > 7:
+        return "forecast_entities_too_many"
+    return None
+
+
 class Gen24EnergyControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow."""
 
@@ -46,6 +62,12 @@ class Gen24EnergyControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Handle the initial step."""
         if user_input is not None:
+            if forecast_error := _forecast_entity_error(user_input):
+                return self.async_show_form(
+                    step_id="user",
+                    data_schema=_schema(user_input),
+                    errors={CONF_SOLAR_FORECAST_SENSORS: forecast_error},
+                )
             await self.async_set_unique_id("gen24_energy_control")
             self._abort_if_unique_id_configured()
             return self.async_create_entry(title="GEN24 Energy Control", data=user_input)
@@ -67,6 +89,12 @@ class Gen24EnergyControlOptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         """Manage options."""
         if user_input is not None:
+            if forecast_error := _forecast_entity_error(user_input):
+                return self.async_show_form(
+                    step_id="init",
+                    data_schema=_schema(user_input),
+                    errors={CONF_SOLAR_FORECAST_SENSORS: forecast_error},
+                )
             return self.async_create_entry(title="", data=user_input)
         defaults = dict(self._config_entry.data) | dict(self._config_entry.options)
         return self.async_show_form(step_id="init", data_schema=_schema(defaults))

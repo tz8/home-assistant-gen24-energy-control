@@ -7,13 +7,21 @@
         "data": {
           "inverter_url": "GEN24-Wechselrichter-URL",
           "price_sensor": "EPEX-Spot-Total-Price-Sensor",
-          "solar_forecast_sensors": "Solar-Prognosesensoren (1: heute, 2: morgen, weitere Tage optional)",
+          "solar_forecast_sensors": "Forecast-Entitäten",
           "pv_production_today_sensor": "PV-Produktion heute Sensor",
           "battery_soc_sensor": "Batterie-SOC-Sensor",
           "house_load_sensor": "Hausverbrauchssensor",
           "write_enabled": "Schreiben auf den Wechselrichter erlauben"
+        },
+        "data_description": {
+          "solar_forecast_sensors": "Wie bei der Solar Forecast Card: geordnete Tagesliste. Mindestens 2, maximal 7 Sensoren: heute, morgen, übermorgen, Tag 4, Tag 5, Tag 6, Tag 7. Jeder Sensor muss einen Tagesforecast in kWh als State liefern.",
+          "pv_production_today_sensor": "Tatsächlich erzeugte PV-Energie heute in kWh. Daraus berechnet die Integration Rest heute = Forecast heute - Produktion heute."
         }
       }
+    },
+    "error": {
+      "forecast_entities_too_few": "Bitte mindestens zwei Forecast-Entitäten auswählen: heute und morgen.",
+      "forecast_entities_too_many": "Bitte maximal sieben Forecast-Entitäten auswählen: heute bis Tag 7."
     }
   },
   "options": {

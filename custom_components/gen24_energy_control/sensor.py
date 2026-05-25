@@ -140,6 +140,7 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
             "pv_forecast_today_kwh": solar_forecast.today_kwh,
             "pv_production_today_kwh": pv_production_today,
             "pv_forecast_tomorrow_kwh": solar_forecast.tomorrow_kwh,
+            "pv_forecast_days_kwh": solar_forecast.days_kwh,
             "pv_forecast_source_entity": solar_forecast.source_entity_id,
             "write_enabled": config.get(CONF_WRITE_ENABLED, DEFAULT_WRITE_ENABLED),
             "missing_input_sources": _missing_input_sources(len(price_slots), soc, house_load, pv_forecast),
@@ -165,6 +166,7 @@ class SolarForecastValues:
     today_kwh: float | None
     remaining_today_kwh: float | None
     tomorrow_kwh: float | None
+    days_kwh: list[float | None]
     source_entity_id: str | None
 
 
@@ -187,18 +189,23 @@ def _solar_forecast_values(
     the today forecast is used as a conservative startup fallback.
     """
     if not entity_ids:
-        return SolarForecastValues(None, None, None, None)
+        return SolarForecastValues(None, None, None, [], None)
     if isinstance(entity_ids, str):
         entity_ids = [entity_ids]
 
     today: float | None = None
     tomorrow: float | None = None
+    days: list[float | None] = []
     source_entity_id: str | None = None
 
-    for index, entity_id in enumerate(entity_ids):
+    for index, entity_id in enumerate(entity_ids[:7]):
         state = hass.states.get(entity_id)
         if state is None:
+            days.append(None)
             continue
+
+        day_value = _float_state(state)
+        days.append(day_value)
 
         # Some integrations expose a single aggregate entity with attributes.
         if today is None:
@@ -241,7 +248,7 @@ def _solar_forecast_values(
     else:
         remaining_today = max(0.0, today - pv_production_today_kwh)
 
-    return SolarForecastValues(today, remaining_today, tomorrow, source_entity_id)
+    return SolarForecastValues(today, remaining_today, tomorrow, days, source_entity_id)
 
 
 def _first_float_attribute(state: Any, keys: tuple[str, ...]) -> float | None:
@@ -311,6 +318,7 @@ class Gen24PolicySensor(CoordinatorEntity, SensorEntity):
             "pv_forecast_today_kwh": self.coordinator.data["pv_forecast_today_kwh"],
             "pv_production_today_kwh": self.coordinator.data["pv_production_today_kwh"],
             "pv_forecast_tomorrow_kwh": self.coordinator.data["pv_forecast_tomorrow_kwh"],
+            "pv_forecast_days_kwh": self.coordinator.data["pv_forecast_days_kwh"],
             "pv_forecast_source_entity": self.coordinator.data["pv_forecast_source_entity"],
         }
 

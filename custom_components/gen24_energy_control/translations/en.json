@@ -7,13 +7,21 @@
         "data": {
           "inverter_url": "GEN24 inverter URL",
           "price_sensor": "EPEX Spot total-price sensor",
-          "solar_forecast_sensors": "Solar forecast sensors (1: today, 2: tomorrow, later days optional)",
+          "solar_forecast_sensors": "Forecast entities",
           "pv_production_today_sensor": "PV production today sensor",
           "battery_soc_sensor": "Battery SOC sensor",
           "house_load_sensor": "House-load sensor",
           "write_enabled": "Allow inverter writes"
+        },
+        "data_description": {
+          "solar_forecast_sensors": "Like the Solar Forecast Card: one ordered daily list. Select at least 2 and at most 7 sensors: today, tomorrow, day 3, day 4, day 5, day 6, day 7. Each sensor must expose a daily kWh forecast as its state.",
+          "pv_production_today_sensor": "Actual PV energy produced today in kWh. The integration calculates remaining today = forecast today - production today."
         }
       }
+    },
+    "error": {
+      "forecast_entities_too_few": "Select at least two forecast entities: today and tomorrow.",
+      "forecast_entities_too_many": "Select at most seven forecast entities: today through day 7."
     }
   },
   "options": {
