@@ -34,8 +34,10 @@ from .const import (
     CONF_PV_PRODUCTION_TODAY_SENSOR,
     CONF_SOLAR_FORECAST_SENSORS,
     CONF_WRITE_ENABLED,
+    DEFAULT_BATTERY_CHARGE_POWER_SENSOR,
     DEFAULT_DISCHARGE_LIMIT_W,
     DEFAULT_EXPORT_LIMIT_W,
+    DEFAULT_GRID_EXPORT_SENSOR,
     DEFAULT_MIN_SOC_PERCENT,
     DEFAULT_WRITE_ENABLED,
     DOMAIN,
@@ -121,8 +123,11 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
 
         soc = _state_float(self.hass, config.get(CONF_BATTERY_SOC_SENSOR))
         house_load = _state_float(self.hass, config.get(CONF_HOUSE_LOAD_SENSOR))
-        grid_export_w = _state_float(self.hass, config.get(CONF_GRID_EXPORT_SENSOR))
-        battery_charge_w = _state_float(self.hass, config.get(CONF_BATTERY_CHARGE_POWER_SENSOR))
+        grid_export_w = _state_float(self.hass, config.get(CONF_GRID_EXPORT_SENSOR, DEFAULT_GRID_EXPORT_SENSOR))
+        battery_charge_w = _state_float(
+            self.hass,
+            config.get(CONF_BATTERY_CHARGE_POWER_SENSOR, DEFAULT_BATTERY_CHARGE_POWER_SENSOR),
+        )
         pv_production_today = _state_float(self.hass, config.get(CONF_PV_PRODUCTION_TODAY_SENSOR))
         solar_forecast = _solar_forecast_values(
             self.hass,
