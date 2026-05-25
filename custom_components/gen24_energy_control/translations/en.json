@@ -8,6 +8,7 @@
           "inverter_url": "GEN24 inverter URL",
           "price_sensor": "EPEX Spot total-price sensor",
           "solar_forecast_sensors": "Forecast entities",
+          "solar_forecast_remaining_today_sensor": "Forecast remaining today sensor",
           "pv_production_today_sensor": "PV production today sensor",
           "battery_soc_sensor": "Battery SOC sensor",
           "house_load_sensor": "House-load sensor",
@@ -17,7 +18,8 @@
         },
         "data_description": {
           "solar_forecast_sensors": "Like the Solar Forecast Card: one ordered daily list. Select at least 2 and at most 7 sensors: today, tomorrow, day 3, day 4, day 5, day 6, day 7. Each sensor must expose a daily kWh forecast as its state.",
-          "pv_production_today_sensor": "Actual PV energy produced today in kWh. The integration calculates remaining today = forecast today - production today.",
+          "solar_forecast_remaining_today_sensor": "Optional sensor for the forecast provider's direct remaining-today kWh estimate. When available, this is preferred so an overachieved daily forecast does not incorrectly produce remaining today = 0.",
+          "pv_production_today_sensor": "Actual PV energy produced today in kWh. Used only as the fallback remaining today = forecast today - production today when no direct remaining-today forecast is available.",
           "grid_export_sensor": "Current grid export in W. Used only as a hysteresis signal so short cloud events do not cause immediate toggling.",
           "battery_charge_power_sensor": "Current battery charge power in W. Helps estimate how far the charge limit may be raised when export curtailment is likely."
         }

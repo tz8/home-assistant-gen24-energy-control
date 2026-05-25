@@ -32,6 +32,7 @@ from .const import (
     CONF_HOUSE_LOAD_SENSOR,
     CONF_PRICE_SENSOR,
     CONF_PV_PRODUCTION_TODAY_SENSOR,
+    CONF_SOLAR_FORECAST_REMAINING_TODAY_SENSOR,
     CONF_SOLAR_FORECAST_SENSORS,
     CONF_WRITE_ENABLED,
     DEFAULT_BATTERY_CHARGE_POWER_SENSOR,
@@ -39,11 +40,13 @@ from .const import (
     DEFAULT_EXPORT_LIMIT_W,
     DEFAULT_GRID_EXPORT_SENSOR,
     DEFAULT_MIN_SOC_PERCENT,
+    DEFAULT_SOLAR_FORECAST_REMAINING_TODAY_SENSOR,
     DEFAULT_WRITE_ENABLED,
     DOMAIN,
 )
 from .planner import PlannerInputs, plan_battery_policy
 from .price_slots import parse_price_slots
+from .solar_forecast import remaining_today_kwh
 
 SCAN_INTERVAL = timedelta(minutes=5)
 _LOGGER = logging.getLogger(__name__)
@@ -96,6 +99,7 @@ def _configured_source_entity_ids(config: dict[str, Any]) -> list[str]:
         CONF_BATTERY_SOC_SENSOR,
         CONF_HOUSE_LOAD_SENSOR,
         CONF_PV_PRODUCTION_TODAY_SENSOR,
+        CONF_SOLAR_FORECAST_REMAINING_TODAY_SENSOR,
         CONF_GRID_EXPORT_SENSOR,
         CONF_BATTERY_CHARGE_POWER_SENSOR,
     ):
@@ -129,10 +133,15 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
             config.get(CONF_BATTERY_CHARGE_POWER_SENSOR) or DEFAULT_BATTERY_CHARGE_POWER_SENSOR,
         )
         pv_production_today = _state_float(self.hass, config.get(CONF_PV_PRODUCTION_TODAY_SENSOR))
+        pv_forecast_remaining_source_entity = (
+            config.get(CONF_SOLAR_FORECAST_REMAINING_TODAY_SENSOR) or DEFAULT_SOLAR_FORECAST_REMAINING_TODAY_SENSOR
+        )
+        pv_forecast_remaining_sensor = _state_float(self.hass, pv_forecast_remaining_source_entity)
         solar_forecast = _solar_forecast_values(
             self.hass,
             config.get(CONF_SOLAR_FORECAST_SENSORS, []),
             pv_production_today,
+            pv_forecast_remaining_sensor,
         )
         pv_forecast = solar_forecast.remaining_today_kwh
 
@@ -159,6 +168,7 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
             "current_grid_export_w": grid_export_w,
             "current_battery_charge_w": battery_charge_w,
             "pv_forecast_remaining_kwh": pv_forecast,
+            "pv_forecast_remaining_source_entity": pv_forecast_remaining_source_entity,
             "pv_forecast_today_kwh": solar_forecast.today_kwh,
             "pv_production_today_kwh": pv_production_today,
             "pv_forecast_tomorrow_kwh": solar_forecast.tomorrow_kwh,
@@ -205,6 +215,7 @@ def _solar_forecast_values(
     hass: HomeAssistant,
     entity_ids: list[str] | str | None,
     pv_production_today_kwh: float | None,
+    pv_forecast_remaining_today_kwh: float | None = None,
 ) -> SolarForecastValues:
     """Return ordered solar forecast values from the configured sensors.
 
@@ -272,12 +283,7 @@ def _solar_forecast_values(
         elif index == 1 and tomorrow is None:
             tomorrow = _float_state(state)
 
-    if today is None:
-        remaining_today = None
-    elif pv_production_today_kwh is None:
-        remaining_today = today
-    else:
-        remaining_today = max(0.0, today - pv_production_today_kwh)
+    remaining_today = remaining_today_kwh(today, pv_production_today_kwh, pv_forecast_remaining_today_kwh)
 
     return SolarForecastValues(today, remaining_today, tomorrow, days, source_entity_id)
 
@@ -351,6 +357,7 @@ class Gen24PolicySensor(CoordinatorEntity, SensorEntity):
             "charge_limit_basis": decision.charge_limit_basis,
             "desired_discharge_limit_w": decision.discharge_limit_w,
             "pv_forecast_remaining_kwh": self.coordinator.data["pv_forecast_remaining_kwh"],
+            "pv_forecast_remaining_source_entity": self.coordinator.data["pv_forecast_remaining_source_entity"],
             "pv_forecast_today_kwh": self.coordinator.data["pv_forecast_today_kwh"],
             "pv_production_today_kwh": self.coordinator.data["pv_production_today_kwh"],
             "pv_forecast_tomorrow_kwh": self.coordinator.data["pv_forecast_tomorrow_kwh"],
