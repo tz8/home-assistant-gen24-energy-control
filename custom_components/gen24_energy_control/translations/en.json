@@ -11,11 +11,15 @@
           "pv_production_today_sensor": "PV production today sensor",
           "battery_soc_sensor": "Battery SOC sensor",
           "house_load_sensor": "House-load sensor",
+          "grid_export_sensor": "Live grid-export sensor",
+          "battery_charge_power_sensor": "Live battery-charge power sensor",
           "write_enabled": "Allow inverter writes"
         },
         "data_description": {
           "solar_forecast_sensors": "Like the Solar Forecast Card: one ordered daily list. Select at least 2 and at most 7 sensors: today, tomorrow, day 3, day 4, day 5, day 6, day 7. Each sensor must expose a daily kWh forecast as its state.",
-          "pv_production_today_sensor": "Actual PV energy produced today in kWh. The integration calculates remaining today = forecast today - production today."
+          "pv_production_today_sensor": "Actual PV energy produced today in kWh. The integration calculates remaining today = forecast today - production today.",
+          "grid_export_sensor": "Current grid export in W. Used only as a hysteresis signal so short cloud events do not cause immediate toggling.",
+          "battery_charge_power_sensor": "Current battery charge power in W. Helps estimate how far the charge limit may be raised when export curtailment is likely."
         }
       }
     },

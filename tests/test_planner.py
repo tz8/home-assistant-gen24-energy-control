@@ -38,6 +38,85 @@ def test_planner_blocks_discharge_but_keeps_wiggal_style_small_charge_limit_when
     assert "forecast-based" in decision.reason
 
 
+def test_planner_raises_charge_limit_when_live_export_is_near_export_limit():
+    decision = plan_battery_policy(
+        PlannerInputs(
+            now=datetime.fromisoformat("2026-05-25T10:05:00+02:00"),
+            price_slots=_slots(),
+            battery_soc_percent=55,
+            pv_forecast_remaining_kwh=20,
+            house_load_w=300,
+            current_grid_export_w=6800,
+            current_battery_charge_w=700,
+            export_limit_w=7000,
+            default_discharge_limit_w=2800,
+            min_soc_percent=15,
+            battery_capacity_kwh=13.8,
+            max_charge_limit_w=6000,
+            min_forecast_charge_limit_w=300,
+            charge_target_hour=17,
+            charge_smoothing_factor=0.5,
+        )
+    )
+
+    assert decision.discharge_limit_w == 0
+    assert decision.charge_limit_w == 1000
+    assert decision.charge_limit_basis == "live_export_hysteresis_enter"
+    assert decision.mode == "hold_for_cheap_pv_window"
+
+
+def test_planner_keeps_live_export_charge_limit_until_export_falls_below_hysteresis_exit():
+    decision = plan_battery_policy(
+        PlannerInputs(
+            now=datetime.fromisoformat("2026-05-25T10:05:00+02:00"),
+            price_slots=_slots(),
+            battery_soc_percent=55,
+            pv_forecast_remaining_kwh=20,
+            house_load_w=300,
+            current_grid_export_w=5800,
+            current_battery_charge_w=1200,
+            previous_charge_limit_w=1800,
+            export_limit_w=7000,
+            default_discharge_limit_w=2800,
+            min_soc_percent=15,
+            battery_capacity_kwh=13.8,
+            max_charge_limit_w=6000,
+            min_forecast_charge_limit_w=300,
+            charge_target_hour=17,
+            charge_smoothing_factor=0.5,
+        )
+    )
+
+    assert decision.charge_limit_w == 1800
+    assert decision.charge_limit_basis == "live_export_hysteresis_hold"
+
+
+def test_planner_returns_to_forecast_floor_after_hysteresis_exit():
+    decision = plan_battery_policy(
+        PlannerInputs(
+            now=datetime.fromisoformat("2026-05-25T10:05:00+02:00"),
+            price_slots=_slots(),
+            battery_soc_percent=55,
+            pv_forecast_remaining_kwh=20,
+            house_load_w=300,
+            current_grid_export_w=4800,
+            current_battery_charge_w=1200,
+            previous_charge_limit_w=1800,
+            export_limit_w=7000,
+            default_discharge_limit_w=2800,
+            min_soc_percent=15,
+            battery_capacity_kwh=13.8,
+            max_charge_limit_w=6000,
+            min_forecast_charge_limit_w=300,
+            charge_target_hour=17,
+            charge_smoothing_factor=0.5,
+        )
+    )
+
+    assert decision.charge_limit_w == 300
+    assert decision.charge_limit_basis == "forecast_planner_floor"
+
+
 def test_planner_allows_default_discharge_when_current_price_is_expensive():
     decision = plan_battery_policy(
         PlannerInputs(

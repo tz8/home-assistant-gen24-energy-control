@@ -26,7 +26,9 @@ from .const import (
     ATTR_REASON,
     ATTR_SOLAR_FORECAST_VALID,
     ATTR_WRITE_ENABLED,
+    CONF_BATTERY_CHARGE_POWER_SENSOR,
     CONF_BATTERY_SOC_SENSOR,
+    CONF_GRID_EXPORT_SENSOR,
     CONF_HOUSE_LOAD_SENSOR,
     CONF_PRICE_SENSOR,
     CONF_PV_PRODUCTION_TODAY_SENSOR,
@@ -87,7 +89,14 @@ def _async_track_configured_sources(hass: HomeAssistant, entry: ConfigEntry, coo
 def _configured_source_entity_ids(config: dict[str, Any]) -> list[str]:
     """Return all configured source entity IDs for event tracking."""
     entity_ids: list[str] = []
-    for key in (CONF_PRICE_SENSOR, CONF_BATTERY_SOC_SENSOR, CONF_HOUSE_LOAD_SENSOR, CONF_PV_PRODUCTION_TODAY_SENSOR):
+    for key in (
+        CONF_PRICE_SENSOR,
+        CONF_BATTERY_SOC_SENSOR,
+        CONF_HOUSE_LOAD_SENSOR,
+        CONF_PV_PRODUCTION_TODAY_SENSOR,
+        CONF_GRID_EXPORT_SENSOR,
+        CONF_BATTERY_CHARGE_POWER_SENSOR,
+    ):
         entity_id = config.get(key)
         if entity_id:
             entity_ids.append(entity_id)
@@ -112,6 +121,8 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
 
         soc = _state_float(self.hass, config.get(CONF_BATTERY_SOC_SENSOR))
         house_load = _state_float(self.hass, config.get(CONF_HOUSE_LOAD_SENSOR))
+        grid_export_w = _state_float(self.hass, config.get(CONF_GRID_EXPORT_SENSOR))
+        battery_charge_w = _state_float(self.hass, config.get(CONF_BATTERY_CHARGE_POWER_SENSOR))
         pv_production_today = _state_float(self.hass, config.get(CONF_PV_PRODUCTION_TODAY_SENSOR))
         solar_forecast = _solar_forecast_values(
             self.hass,
@@ -127,6 +138,9 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
                 battery_soc_percent=soc,
                 pv_forecast_remaining_kwh=pv_forecast,
                 house_load_w=house_load,
+                current_grid_export_w=grid_export_w,
+                current_battery_charge_w=battery_charge_w,
+                previous_charge_limit_w=_previous_charge_limit(self.data),
                 export_limit_w=DEFAULT_EXPORT_LIMIT_W,
                 default_discharge_limit_w=DEFAULT_DISCHARGE_LIMIT_W,
                 min_soc_percent=DEFAULT_MIN_SOC_PERCENT,
@@ -137,6 +151,8 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
             "price_slot_count": len(price_slots),
             "battery_soc_percent": soc,
             "house_load_w": house_load,
+            "current_grid_export_w": grid_export_w,
+            "current_battery_charge_w": battery_charge_w,
             "pv_forecast_remaining_kwh": pv_forecast,
             "pv_forecast_today_kwh": solar_forecast.today_kwh,
             "pv_production_today_kwh": pv_production_today,
@@ -158,6 +174,15 @@ def _state_float(hass: HomeAssistant, entity_id: str | None) -> float | None:
         return float(state.state)
     except (TypeError, ValueError):
         return None
+
+
+def _previous_charge_limit(data: dict[str, Any] | None) -> int | None:
+    if not data:
+        return None
+    decision = data.get("decision")
+    if decision is None or decision.charge_limit_w is None:
+        return None
+    return int(decision.charge_limit_w)
 
 
 @dataclass(frozen=True, slots=True)
@@ -315,6 +340,8 @@ class Gen24PolicySensor(CoordinatorEntity, SensorEntity):
             "price_slot_count": self.coordinator.data["price_slot_count"],
             "battery_soc_percent": self.coordinator.data["battery_soc_percent"],
             "house_load_w": self.coordinator.data["house_load_w"],
+            "current_grid_export_w": self.coordinator.data["current_grid_export_w"],
+            "current_battery_charge_w": self.coordinator.data["current_battery_charge_w"],
             "desired_charge_limit_w": decision.charge_limit_w,
             "charge_limit_basis": decision.charge_limit_basis,
             "desired_discharge_limit_w": decision.discharge_limit_w,

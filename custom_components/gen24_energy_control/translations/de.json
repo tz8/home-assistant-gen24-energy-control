@@ -11,11 +11,15 @@
           "pv_production_today_sensor": "PV-Produktion heute Sensor",
           "battery_soc_sensor": "Batterie-SOC-Sensor",
           "house_load_sensor": "Hausverbrauchssensor",
+          "grid_export_sensor": "Live-Netzeinspeisungssensor",
+          "battery_charge_power_sensor": "Live-Batterieladeleistungssensor",
           "write_enabled": "Schreiben auf den Wechselrichter erlauben"
         },
         "data_description": {
           "solar_forecast_sensors": "Wie bei der Solar Forecast Card: geordnete Tagesliste. Mindestens 2, maximal 7 Sensoren: heute, morgen, übermorgen, Tag 4, Tag 5, Tag 6, Tag 7. Jeder Sensor muss einen Tagesforecast in kWh als State liefern.",
-          "pv_production_today_sensor": "Tatsächlich erzeugte PV-Energie heute in kWh. Daraus berechnet die Integration Rest heute = Forecast heute - Produktion heute."
+          "pv_production_today_sensor": "Tatsächlich erzeugte PV-Energie heute in kWh. Daraus berechnet die Integration Rest heute = Forecast heute - Produktion heute.",
+          "grid_export_sensor": "Aktuelle Einspeiseleistung in W. Wird nur als Hysterese-Signal genutzt, damit kurze Wolken nicht sofort Umschaltungen auslösen.",
+          "battery_charge_power_sensor": "Aktuelle Batterieladeleistung in W. Hilft einzuschätzen, wie weit das Charge-Limit bei drohender Abregelung angehoben werden darf."
         }
       }
     },

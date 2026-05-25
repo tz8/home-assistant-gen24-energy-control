@@ -23,6 +23,11 @@ class PlannerInputs:
     battery_capacity_kwh: float = 13.8
     max_charge_limit_w: int = 6000
     min_forecast_charge_limit_w: int = 300
+    current_grid_export_w: float | None = None
+    current_battery_charge_w: float | None = None
+    previous_charge_limit_w: int | None = None
+    live_export_enter_margin_w: int = 500
+    live_export_exit_margin_w: int = 1500
     charge_target_hour: int = 17
     charge_smoothing_factor: float = 0.5
 
@@ -77,6 +82,33 @@ def _forecast_charge_limit(inputs: PlannerInputs) -> tuple[int, str]:
     return calculated_w, "forecast_planner"
 
 
+def _live_export_charge_limit(inputs: PlannerInputs, forecast_limit_w: int) -> tuple[int, str] | None:
+    """Raise charge limit when live export suggests curtailment risk, with hysteresis.
+
+    Fast cloud movements can make live export jump around. Enter only when export
+    is close to the inverter/export limit, then hold the raised value until export
+    drops clearly below a lower exit threshold.
+    """
+    if inputs.current_grid_export_w is None:
+        return None
+
+    enter_threshold_w = inputs.export_limit_w - inputs.live_export_enter_margin_w
+    exit_threshold_w = inputs.export_limit_w - inputs.live_export_exit_margin_w
+    previous_limit_w = inputs.previous_charge_limit_w or 0
+
+    if inputs.current_grid_export_w >= enter_threshold_w:
+        spare_export_w = inputs.current_grid_export_w - enter_threshold_w
+        current_battery_charge_w = max(0, int(inputs.current_battery_charge_w or 0))
+        live_limit_w = current_battery_charge_w + int(spare_export_w)
+        live_limit_w = max(forecast_limit_w, live_limit_w)
+        return min(inputs.max_charge_limit_w, live_limit_w), "live_export_hysteresis_enter"
+
+    if previous_limit_w > forecast_limit_w and inputs.current_grid_export_w >= exit_threshold_w:
+        return min(inputs.max_charge_limit_w, previous_limit_w), "live_export_hysteresis_hold"
+
+    return None
+
+
 def plan_battery_policy(inputs: PlannerInputs) -> BatteryPolicyDecision:
     """Plan a safe GEN24 battery policy.
 
@@ -128,6 +160,9 @@ def plan_battery_policy(inputs: PlannerInputs) -> BatteryPolicyDecision:
     # use a Wiggal-style forecast charge limit instead of hard-blocking charge.
     if percentile <= 0.25 and forecast_valid and pv_remaining >= 8:
         charge_limit_w, charge_limit_basis = _forecast_charge_limit(inputs)
+        live_charge_limit = _live_export_charge_limit(inputs, charge_limit_w)
+        if live_charge_limit is not None:
+            charge_limit_w, charge_limit_basis = live_charge_limit
         return BatteryPolicyDecision(
             mode="hold_for_cheap_pv_window",
             reason="Current price is cheap and solar forecast is high; block discharge and use a forecast-based charge limit to preserve battery headroom for the PV peak.",

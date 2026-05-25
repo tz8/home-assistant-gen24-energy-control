@@ -8,6 +8,8 @@ CONF_SOLAR_FORECAST_SENSORS = "solar_forecast_sensors"
 CONF_PV_PRODUCTION_TODAY_SENSOR = "pv_production_today_sensor"
 CONF_BATTERY_SOC_SENSOR = "battery_soc_sensor"
 CONF_HOUSE_LOAD_SENSOR = "house_load_sensor"
+CONF_GRID_EXPORT_SENSOR = "grid_export_sensor"
+CONF_BATTERY_CHARGE_POWER_SENSOR = "battery_charge_power_sensor"
 CONF_WRITE_ENABLED = "write_enabled"
 
 DEFAULT_INVERTER_URL = "http://192.168.178.135"
