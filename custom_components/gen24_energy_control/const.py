@@ -17,6 +17,8 @@ DEFAULT_WRITE_ENABLED = False
 
 ATTR_REASON = "reason"
 ATTR_MODE = "mode"
-ATTR_WRITE_ALLOWED = "write_allowed"
+ATTR_POLICY_WRITABLE = "policy_writable"
+ATTR_WRITE_ENABLED = "write_enabled"
+ATTR_EFFECTIVE_WRITE_ALLOWED = "effective_write_allowed"
 ATTR_PRICE_SOURCE_VALID = "price_source_valid"
 ATTR_SOLAR_FORECAST_VALID = "solar_forecast_valid"

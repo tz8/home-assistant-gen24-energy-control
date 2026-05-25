@@ -23,7 +23,7 @@ SERVICE_APPLY_POLICY = "apply_policy"
 
 async def async_setup_entry(hass: "HomeAssistant", entry: "ConfigEntry") -> bool:
     """Set up GEN24 Energy Control from a config entry."""
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"config": dict(entry.data) | dict(entry.options)}
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"entry": entry, "config": dict(entry.data) | dict(entry.options)}
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     _async_register_services(hass)
     return True
@@ -47,7 +47,8 @@ def _async_register_services(hass: "HomeAssistant") -> None:
         entries = hass.data.get(DOMAIN, {})
         candidates = [entries[entry_id]] if entry_id else list(entries.values())
         for runtime in candidates:
-            config = runtime.get("config", {})
+            entry = runtime.get("entry")
+            config = (dict(entry.data) | dict(entry.options)) if entry is not None else runtime.get("config", {})
             if not config.get(CONF_WRITE_ENABLED, DEFAULT_WRITE_ENABLED):
                 continue
             coordinator = runtime.get("coordinator")

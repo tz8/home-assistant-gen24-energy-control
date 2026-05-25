@@ -15,18 +15,22 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Coor
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    ATTR_EFFECTIVE_WRITE_ALLOWED,
     ATTR_MODE,
+    ATTR_POLICY_WRITABLE,
     ATTR_PRICE_SOURCE_VALID,
     ATTR_REASON,
     ATTR_SOLAR_FORECAST_VALID,
-    ATTR_WRITE_ALLOWED,
+    ATTR_WRITE_ENABLED,
     CONF_BATTERY_SOC_SENSOR,
     CONF_HOUSE_LOAD_SENSOR,
     CONF_PRICE_SENSOR,
     CONF_SOLAR_FORECAST_SENSORS,
+    CONF_WRITE_ENABLED,
     DEFAULT_DISCHARGE_LIMIT_W,
     DEFAULT_EXPORT_LIMIT_W,
     DEFAULT_MIN_SOC_PERCENT,
+    DEFAULT_WRITE_ENABLED,
     DOMAIN,
 )
 from .planner import PlannerInputs, plan_battery_policy
@@ -94,6 +98,7 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
             "battery_soc_percent": soc,
             "house_load_w": house_load,
             "pv_forecast_remaining_kwh": pv_forecast,
+            "write_enabled": config.get(CONF_WRITE_ENABLED, DEFAULT_WRITE_ENABLED),
         }
 
 
@@ -155,9 +160,12 @@ class Gen24PolicySensor(CoordinatorEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         decision = self.coordinator.data["decision"]
+        write_enabled = self.coordinator.data["write_enabled"]
         return {
             ATTR_REASON: decision.reason,
-            ATTR_WRITE_ALLOWED: decision.write_allowed,
+            ATTR_POLICY_WRITABLE: decision.write_allowed,
+            ATTR_WRITE_ENABLED: write_enabled,
+            ATTR_EFFECTIVE_WRITE_ALLOWED: write_enabled and decision.write_allowed,
             ATTR_PRICE_SOURCE_VALID: decision.price_source_valid,
             ATTR_SOLAR_FORECAST_VALID: decision.solar_forecast_valid,
             "price_slot_count": self.coordinator.data["price_slot_count"],
