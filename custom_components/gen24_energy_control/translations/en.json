@@ -7,7 +7,8 @@
         "data": {
           "inverter_url": "GEN24 inverter URL",
           "price_sensor": "EPEX Spot total-price sensor",
-          "solar_forecast_sensors": "Solar forecast sensors",
+          "solar_forecast_sensors": "Solar forecast sensors (1: today, 2: tomorrow, later days optional)",
+          "pv_production_today_sensor": "PV production today sensor",
           "battery_soc_sensor": "Battery SOC sensor",
           "house_load_sensor": "House-load sensor",
           "write_enabled": "Allow inverter writes"
