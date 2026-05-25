@@ -43,8 +43,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         [
             Gen24PolicySensor(coordinator, entry),
             Gen24DischargeLimitSensor(coordinator, entry),
-        ]
+        ],
+        True,
     )
+
+
+def _device_info(entry: ConfigEntry) -> dict[str, Any]:
+    """Return the shared device info for all entities of this config entry."""
+    return {
+        "identifiers": {(DOMAIN, entry.entry_id)},
+        "manufacturer": "Fronius",
+        "model": "GEN24 Plus",
+        "name": entry.title or "GEN24 Energy Control",
+    }
 
 
 class Gen24EnergyCoordinator(DataUpdateCoordinator):
@@ -132,6 +143,7 @@ class Gen24PolicySensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator: Gen24EnergyCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_battery_policy"
+        self._attr_device_info = _device_info(entry)
 
     @property
     def native_value(self) -> str | None:
@@ -163,6 +175,7 @@ class Gen24DischargeLimitSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator: Gen24EnergyCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_desired_discharge_limit"
+        self._attr_device_info = _device_info(entry)
 
     @property
     def native_value(self) -> int | None:
