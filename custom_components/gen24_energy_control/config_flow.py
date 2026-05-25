@@ -19,6 +19,8 @@ from .const import (
     CONF_PV_PRODUCTION_TODAY_SENSOR,
     CONF_SOLAR_FORECAST_SENSORS,
     CONF_WRITE_ENABLED,
+    DEFAULT_BATTERY_CHARGE_POWER_SENSOR,
+    DEFAULT_GRID_EXPORT_SENSOR,
     DEFAULT_INVERTER_URL,
     DEFAULT_WRITE_ENABLED,
     DOMAIN,
@@ -35,8 +37,8 @@ def _schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
             vol.Optional(CONF_PV_PRODUCTION_TODAY_SENSOR, default=defaults.get(CONF_PV_PRODUCTION_TODAY_SENSOR)): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
             vol.Optional(CONF_BATTERY_SOC_SENSOR, default=defaults.get(CONF_BATTERY_SOC_SENSOR)): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
             vol.Optional(CONF_HOUSE_LOAD_SENSOR, default=defaults.get(CONF_HOUSE_LOAD_SENSOR)): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
-            vol.Optional(CONF_GRID_EXPORT_SENSOR, default=defaults.get(CONF_GRID_EXPORT_SENSOR)): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
-            vol.Optional(CONF_BATTERY_CHARGE_POWER_SENSOR, default=defaults.get(CONF_BATTERY_CHARGE_POWER_SENSOR)): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+            vol.Optional(CONF_GRID_EXPORT_SENSOR, default=defaults.get(CONF_GRID_EXPORT_SENSOR, DEFAULT_GRID_EXPORT_SENSOR)): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+            vol.Optional(CONF_BATTERY_CHARGE_POWER_SENSOR, default=defaults.get(CONF_BATTERY_CHARGE_POWER_SENSOR, DEFAULT_BATTERY_CHARGE_POWER_SENSOR)): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
             vol.Required(CONF_WRITE_ENABLED, default=defaults.get(CONF_WRITE_ENABLED, DEFAULT_WRITE_ENABLED)): bool,
         }
     )
