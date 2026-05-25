@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import timedelta
 from typing import Any
 
@@ -32,6 +33,7 @@ from .planner import PlannerInputs, plan_battery_policy
 from .price_slots import parse_price_slots
 
 SCAN_INTERVAL = timedelta(minutes=5)
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -62,7 +64,7 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
     """Collect HA state and derive the current policy."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        super().__init__(hass, None, name=DOMAIN, update_interval=SCAN_INTERVAL)
+        super().__init__(hass, _LOGGER, config_entry=entry, name=DOMAIN, update_interval=SCAN_INTERVAL)
         self.entry = entry
 
     async def _async_update_data(self) -> dict[str, Any]:
