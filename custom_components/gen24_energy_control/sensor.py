@@ -316,6 +316,7 @@ class Gen24PolicySensor(CoordinatorEntity, SensorEntity):
             "battery_soc_percent": self.coordinator.data["battery_soc_percent"],
             "house_load_w": self.coordinator.data["house_load_w"],
             "desired_charge_limit_w": decision.charge_limit_w,
+            "charge_limit_basis": decision.charge_limit_basis,
             "desired_discharge_limit_w": decision.discharge_limit_w,
             "pv_forecast_remaining_kwh": self.coordinator.data["pv_forecast_remaining_kwh"],
             "pv_forecast_today_kwh": self.coordinator.data["pv_forecast_today_kwh"],
@@ -369,4 +370,8 @@ class Gen24ChargeLimitSensor(CoordinatorEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         decision = self.coordinator.data["decision"]
-        return {ATTR_MODE: decision.mode, ATTR_REASON: decision.reason}
+        return {
+            ATTR_MODE: decision.mode,
+            ATTR_REASON: decision.reason,
+            "charge_limit_basis": decision.charge_limit_basis,
+        }

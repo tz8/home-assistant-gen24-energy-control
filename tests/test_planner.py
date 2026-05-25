@@ -12,24 +12,30 @@ def _slots():
     ])
 
 
-def test_planner_blocks_discharge_when_current_price_is_cheap_and_pv_forecast_is_high():
+def test_planner_blocks_discharge_but_keeps_wiggal_style_small_charge_limit_when_price_is_cheap_and_pv_forecast_is_high():
     decision = plan_battery_policy(
         PlannerInputs(
             now=datetime.fromisoformat("2026-05-25T10:05:00+02:00"),
             price_slots=_slots(),
             battery_soc_percent=45,
-            pv_forecast_remaining_kwh=20,
+            pv_forecast_remaining_kwh=39,
             house_load_w=900,
             export_limit_w=7000,
             default_discharge_limit_w=2800,
             min_soc_percent=15,
+            battery_capacity_kwh=13.8,
+            max_charge_limit_w=6000,
+            min_forecast_charge_limit_w=300,
+            charge_target_hour=17,
+            charge_smoothing_factor=0.5,
         )
     )
 
     assert decision.discharge_limit_w == 0
-    assert decision.charge_limit_w == 0
+    assert decision.charge_limit_w == 300
+    assert decision.charge_limit_basis == "forecast_planner_floor"
     assert decision.mode == "hold_for_cheap_pv_window"
-    assert "cheap" in decision.reason
+    assert "forecast-based" in decision.reason
 
 
 def test_planner_allows_default_discharge_when_current_price_is_expensive():
