@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
@@ -109,7 +110,8 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
 
         soc = _state_float(self.hass, config.get(CONF_BATTERY_SOC_SENSOR))
         house_load = _state_float(self.hass, config.get(CONF_HOUSE_LOAD_SENSOR))
-        pv_forecast = _solar_forecast_remaining_kwh(self.hass, config.get(CONF_SOLAR_FORECAST_SENSORS, []))
+        solar_forecast = _solar_forecast_values(self.hass, config.get(CONF_SOLAR_FORECAST_SENSORS, []))
+        pv_forecast = solar_forecast.remaining_today_kwh
 
         decision = plan_battery_policy(
             PlannerInputs(
@@ -129,6 +131,8 @@ class Gen24EnergyCoordinator(DataUpdateCoordinator):
             "battery_soc_percent": soc,
             "house_load_w": house_load,
             "pv_forecast_remaining_kwh": pv_forecast,
+            "pv_forecast_tomorrow_kwh": solar_forecast.tomorrow_kwh,
+            "pv_forecast_source_entity": solar_forecast.source_entity_id,
             "write_enabled": config.get(CONF_WRITE_ENABLED, DEFAULT_WRITE_ENABLED),
             "missing_input_sources": _missing_input_sources(len(price_slots), soc, house_load, pv_forecast),
         }
@@ -146,31 +150,93 @@ def _state_float(hass: HomeAssistant, entity_id: str | None) -> float | None:
         return None
 
 
-def _solar_forecast_remaining_kwh(hass: HomeAssistant, entity_ids: list[str] | str | None) -> float | None:
+@dataclass(frozen=True, slots=True)
+class SolarForecastValues:
+    """Solar forecast values parsed from the configured forecast sensors."""
+
+    remaining_today_kwh: float | None
+    tomorrow_kwh: float | None
+    source_entity_id: str | None
+
+
+def _solar_forecast_values(hass: HomeAssistant, entity_ids: list[str] | str | None) -> SolarForecastValues:
+    """Return ordered solar forecast values from the configured sensors.
+
+    The config flow exposes one multi-entity selector instead of many dedicated
+    day fields. Treat the configured list as ordered forecast inputs:
+
+    - sensor 1: today / remaining today (required for policy decisions)
+    - sensor 2: tomorrow (optional diagnostic / future planning input)
+    - later sensors: reserved for d2..d7 planning
+
+    Never take ``max()`` across all sensors here. A high tomorrow value must not
+    replace the remaining-today value used by the current policy.
+    """
     if not entity_ids:
-        return None
+        return SolarForecastValues(None, None, None)
     if isinstance(entity_ids, str):
         entity_ids = [entity_ids]
-    values: list[float] = []
-    for entity_id in entity_ids:
+
+    remaining_today: float | None = None
+    tomorrow: float | None = None
+    source_entity_id: str | None = None
+
+    for index, entity_id in enumerate(entity_ids):
         state = hass.states.get(entity_id)
         if state is None:
             continue
-        for key in ("remaining_today", "forecast_remaining_kwh", "today", "tomorrow"):
-            value = state.attributes.get(key)
-            try:
-                values.append(float(value))
-                break
-            except (TypeError, ValueError):
-                continue
-        else:
-            try:
-                values.append(float(state.state))
-            except (TypeError, ValueError):
-                continue
-    if not values:
+
+        # Some integrations expose a single aggregate entity with attributes.
+        if remaining_today is None:
+            remaining_today = _first_float_attribute(
+                state,
+                (
+                    "remaining_today",
+                    "today_remaining",
+                    "forecast_remaining_kwh",
+                    "estimate_remaining_today",
+                ),
+            )
+            if remaining_today is not None:
+                source_entity_id = entity_id
+
+        if tomorrow is None:
+            tomorrow = _first_float_attribute(
+                state,
+                (
+                    "tomorrow",
+                    "forecast_tomorrow_kwh",
+                    "estimate_tomorrow",
+                ),
+            )
+
+        # Positional fallback for the multi-selector: first entry is today,
+        # second entry is tomorrow. This matches the HA option screen and avoids
+        # seven separate config-flow fields for simple setups.
+        if index == 0 and remaining_today is None:
+            remaining_today = _float_state(state)
+            if remaining_today is not None:
+                source_entity_id = entity_id
+        elif index == 1 and tomorrow is None:
+            tomorrow = _float_state(state)
+
+    return SolarForecastValues(remaining_today, tomorrow, source_entity_id)
+
+
+def _first_float_attribute(state: Any, keys: tuple[str, ...]) -> float | None:
+    for key in keys:
+        try:
+            return float(state.attributes.get(key))
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _float_state(state: Any) -> float | None:
+    try:
+        return float(state.state)
+    except (TypeError, ValueError):
         return None
-    return max(values)
 
 
 def _missing_input_sources(price_slot_count: int, battery_soc: float | None, house_load: float | None, pv_forecast: float | None) -> list[str]:
@@ -221,6 +287,8 @@ class Gen24PolicySensor(CoordinatorEntity, SensorEntity):
             "battery_soc_percent": self.coordinator.data["battery_soc_percent"],
             "house_load_w": self.coordinator.data["house_load_w"],
             "pv_forecast_remaining_kwh": self.coordinator.data["pv_forecast_remaining_kwh"],
+            "pv_forecast_tomorrow_kwh": self.coordinator.data["pv_forecast_tomorrow_kwh"],
+            "pv_forecast_source_entity": self.coordinator.data["pv_forecast_source_entity"],
         }
 
 
