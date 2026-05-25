@@ -55,6 +55,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         [
             Gen24PolicySensor(coordinator, entry),
             Gen24DischargeLimitSensor(coordinator, entry),
+            Gen24ChargeLimitSensor(coordinator, entry),
         ],
         True,
     )
@@ -314,6 +315,8 @@ class Gen24PolicySensor(CoordinatorEntity, SensorEntity):
             "price_slot_count": self.coordinator.data["price_slot_count"],
             "battery_soc_percent": self.coordinator.data["battery_soc_percent"],
             "house_load_w": self.coordinator.data["house_load_w"],
+            "desired_charge_limit_w": decision.charge_limit_w,
+            "desired_discharge_limit_w": decision.discharge_limit_w,
             "pv_forecast_remaining_kwh": self.coordinator.data["pv_forecast_remaining_kwh"],
             "pv_forecast_today_kwh": self.coordinator.data["pv_forecast_today_kwh"],
             "pv_production_today_kwh": self.coordinator.data["pv_production_today_kwh"],
@@ -339,6 +342,29 @@ class Gen24DischargeLimitSensor(CoordinatorEntity, SensorEntity):
     def native_value(self) -> int | None:
         decision = self.coordinator.data["decision"]
         return decision.discharge_limit_w
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        decision = self.coordinator.data["decision"]
+        return {ATTR_MODE: decision.mode, ATTR_REASON: decision.reason}
+
+
+class Gen24ChargeLimitSensor(CoordinatorEntity, SensorEntity):
+    """Desired charge limit sensor."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Desired Charge Limit"
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
+
+    def __init__(self, coordinator: Gen24EnergyCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_desired_charge_limit"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def native_value(self) -> int | None:
+        decision = self.coordinator.data["decision"]
+        return decision.charge_limit_w
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

@@ -27,7 +27,7 @@ def test_planner_blocks_discharge_when_current_price_is_cheap_and_pv_forecast_is
     )
 
     assert decision.discharge_limit_w == 0
-    assert decision.charge_limit_w is None
+    assert decision.charge_limit_w == 0
     assert decision.mode == "hold_for_cheap_pv_window"
     assert "cheap" in decision.reason
 
@@ -47,6 +47,7 @@ def test_planner_allows_default_discharge_when_current_price_is_expensive():
     )
 
     assert decision.discharge_limit_w == 2800
+    assert decision.charge_limit_w == 0
     assert decision.mode == "price_support_discharge"
     assert "expensive" in decision.reason
 

@@ -92,9 +92,9 @@ def plan_battery_policy(inputs: PlannerInputs) -> BatteryPolicyDecision:
     if percentile <= 0.25 and forecast_valid and pv_remaining >= 8:
         return BatteryPolicyDecision(
             mode="hold_for_cheap_pv_window",
-            reason="Current price is cheap and solar forecast is high; block discharge to preserve battery headroom/value.",
+            reason="Current price is cheap and solar forecast is high; block discharge and charging to preserve battery headroom for the PV peak.",
             discharge_limit_w=0,
-            charge_limit_w=None,
+            charge_limit_w=0,
             write_allowed=True,
             price_source_valid=True,
             solar_forecast_valid=True,
@@ -103,9 +103,9 @@ def plan_battery_policy(inputs: PlannerInputs) -> BatteryPolicyDecision:
     if percentile >= 0.75:
         return BatteryPolicyDecision(
             mode="price_support_discharge",
-            reason="Current price is expensive; allow configured default battery discharge.",
+            reason="Current price is expensive; avoid battery charging and allow configured default battery discharge.",
             discharge_limit_w=inputs.default_discharge_limit_w,
-            charge_limit_w=None,
+            charge_limit_w=0,
             write_allowed=True,
             price_source_valid=True,
             solar_forecast_valid=forecast_valid,
