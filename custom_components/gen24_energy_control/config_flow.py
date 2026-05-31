@@ -10,8 +10,8 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
 
 from .const import (
-    CONF_BATTERY_SOC_SENSOR,
     CONF_BATTERY_CHARGE_POWER_SENSOR,
+    CONF_BATTERY_SOC_SENSOR,
     CONF_GRID_EXPORT_SENSOR,
     CONF_HOUSE_LOAD_SENSOR,
     CONF_INVERTER_URL,
