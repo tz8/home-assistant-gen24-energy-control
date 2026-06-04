@@ -103,11 +103,20 @@ Aktuell ist dies eine Custom Integration im frühen Entwicklungsstand. Installat
 3. Home Assistant neu starten.
 4. **Einstellungen** → **Geräte & Dienste** → **Integration hinzufügen** öffnen.
 5. **GEN24 Energy Control** auswählen.
-6. Sensoren konfigurieren:
-   - GEN24-Wechselrichter-URL, z.B. `http://192.168.178.135`
-   - EPEX-Spot-Total-Price-Sensor, z.B. `sensor.epex_spot_data_total_price`
-   - mindestens einen Solar-Forecast-Sensor
-   - optional Batterie-SOC- und Hausverbrauchssensor
+6. Den 3-stufigen Config Flow durchgehen:
+   - **Grundlagen**
+     - GEN24-Wechselrichter-URL, z. B. `http://192.168.178.135`
+     - EPEX-Spot-Total-Price-Sensor, z. B. `sensor.epex_spot_data_total_price`
+   - **PV-Prognose**
+     - geordnete Forecast-Liste: heute, morgen, optional weitere Tage
+     - optional direkter „Rest heute“-Forecast
+     - optional PV-Produktion heute als Fallback
+   - **Live-Daten & Schreibschutz**
+     - Batterie-SOC-Sensor
+     - Hausverbrauchs-Sensor
+     - optional Netzeinspeisung live
+     - optional Batterieladeleistung live
+     - `write_enabled` zunächst deaktiviert lassen
 
 Standardmäßig ist das Schreiben auf den Wechselrichter deaktiviert. Erst wenn `write_enabled` aktiv ist, darf der Service `gen24_energy_control.apply_policy` den berechneten Sollwert per Fronius-API nach `/config/timeofuse` schreiben.
 

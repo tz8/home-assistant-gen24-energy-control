@@ -2,39 +2,107 @@
   "config": {
     "step": {
       "user": {
-        "title": "GEN24 Energy Control",
-        "description": "Configure conservative Home Assistant orchestration for Fronius GEN24 battery policy.",
+        "title": "GEN24 Energy Control – Basics",
+        "description": "Step 1 of 3. First choose the inverter connection and the price source.",
         "data": {
           "inverter_url": "GEN24 inverter URL",
-          "price_sensor": "EPEX Spot total-price sensor",
-          "solar_forecast_sensors": "Forecast entities",
-          "solar_forecast_remaining_today_sensor": "Forecast remaining today sensor",
-          "pv_production_today_sensor": "PV production today sensor",
-          "battery_soc_sensor": "Battery SOC sensor",
-          "house_load_sensor": "House-load sensor",
-          "grid_export_sensor": "Live grid-export sensor",
-          "battery_charge_power_sensor": "Live battery-charge power sensor",
-          "write_enabled": "Allow inverter writes"
+          "price_sensor": "Electricity price sensor"
         },
         "data_description": {
-          "solar_forecast_sensors": "Like the Solar Forecast Card: one ordered daily list. Select at least 2 and at most 7 sensors: today, tomorrow, day 3, day 4, day 5, day 6, day 7. Each sensor must expose a daily kWh forecast as its state.",
-          "solar_forecast_remaining_today_sensor": "Optional sensor for the forecast provider's direct remaining-today kWh estimate. When available, this is preferred so an overachieved daily forecast does not incorrectly produce remaining today = 0.",
-          "pv_production_today_sensor": "Actual PV energy produced today in kWh. Used only as the fallback remaining today = forecast today - production today when no direct remaining-today forecast is available.",
-          "grid_export_sensor": "Current grid export in W. Used only as a hysteresis signal so short cloud events do not cause immediate toggling.",
-          "battery_charge_power_sensor": "Current battery charge power in W. Helps estimate how far the charge limit may be raised when export curtailment is likely."
+          "inverter_url": "Base URL of the Fronius GEN24, for example http://192.168.178.135. The integration later writes to /config/timeofuse.",
+          "price_sensor": "Sensor with price slots in its 'data' attribute, ideally the total-price sensor from the EPEX Spot integration."
+        }
+      },
+      "forecast": {
+        "title": "GEN24 Energy Control – PV forecast",
+        "description": "Step 2 of 3. Now choose the solar forecast sensors in the correct order.",
+        "data": {
+          "solar_forecast_sensors": "Daily forecast sensors (today → tomorrow → later days)",
+          "solar_forecast_remaining_today_sensor": "Remaining-today forecast (optional)",
+          "pv_production_today_sensor": "PV production today (fallback, optional)"
+        },
+        "data_description": {
+          "solar_forecast_sensors": "Ordered daily list with at least 2 and at most 7 sensors. Order: today, tomorrow, day 3, day 4, day 5, day 6, day 7. Each sensor must expose the daily forecast in kWh as its state.",
+          "solar_forecast_remaining_today_sensor": "Optional sensor for the forecast provider's direct remaining-today kWh estimate. This is preferred because it is more robust than forecast today minus production so far.",
+          "pv_production_today_sensor": "Fallback only: actual PV production today in kWh. Used when no direct remaining-today forecast is available."
+        }
+      },
+      "live": {
+        "title": "GEN24 Energy Control – Live data & write protection",
+        "description": "Step 3 of 3. These live sensors make the policy easier to understand and more stable. Writing to the inverter stays disabled by default.",
+        "data": {
+          "battery_soc_sensor": "Battery SOC sensor",
+          "house_load_sensor": "House-load sensor",
+          "grid_export_sensor": "Live grid export (optional)",
+          "battery_charge_power_sensor": "Live battery charge power (optional)",
+          "write_enabled": "Allow writes to the inverter"
+        },
+        "data_description": {
+          "battery_soc_sensor": "Current battery state of charge in percent. Without it, price- and SOC-based decisions stay in the safe fallback path.",
+          "house_load_sensor": "Current house load in W. Important so expensive and cheap price windows can be evaluated correctly.",
+          "grid_export_sensor": "Current export power in W. Helps the hysteresis logic so short cloud events or small fluctuations do not trigger immediate toggling.",
+          "battery_charge_power_sensor": "Current battery charge power in W. Improves charge-limit planning when export curtailment or PV peaks are likely.",
+          "write_enabled": "Disabled by default for safety. Enable only after the calculated sensor values and reasons look plausible in Home Assistant."
         }
       }
     },
     "error": {
       "forecast_entities_too_few": "Select at least two forecast entities: today and tomorrow.",
-      "forecast_entities_too_many": "Select at most seven forecast entities: today through day 7."
+      "forecast_entities_too_many": "Select at most seven forecast entities: today through day 7.",
+      "invalid_inverter_url": "Enter a complete http:// or https:// inverter URL."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "GEN24 Energy Control options"
+        "title": "GEN24 Energy Control options – Basics",
+        "description": "Step 1 of 3. Adjust the connection and price source.",
+        "data": {
+          "inverter_url": "GEN24 inverter URL",
+          "price_sensor": "Electricity price sensor"
+        },
+        "data_description": {
+          "inverter_url": "Base URL of the Fronius GEN24, for example http://192.168.178.135.",
+          "price_sensor": "Sensor with price slots in its 'data' attribute, ideally the total-price sensor from the EPEX Spot integration."
+        }
+      },
+      "forecast": {
+        "title": "GEN24 Energy Control options – PV forecast",
+        "description": "Step 2 of 3. Review the forecast sensors and keep them in the correct order.",
+        "data": {
+          "solar_forecast_sensors": "Daily forecast sensors (today → tomorrow → later days)",
+          "solar_forecast_remaining_today_sensor": "Remaining-today forecast (optional)",
+          "pv_production_today_sensor": "PV production today (fallback, optional)"
+        },
+        "data_description": {
+          "solar_forecast_sensors": "Ordered daily list with at least 2 and at most 7 sensors. Order: today, tomorrow, day 3, day 4, day 5, day 6, day 7.",
+          "solar_forecast_remaining_today_sensor": "Optional direct remaining-today forecast in kWh.",
+          "pv_production_today_sensor": "Fallback for remaining today = forecast today - production today."
+        }
+      },
+      "live": {
+        "title": "GEN24 Energy Control options – Live data & write protection",
+        "description": "Step 3 of 3. Adjust the live sensors and the write protection.",
+        "data": {
+          "battery_soc_sensor": "Battery SOC sensor",
+          "house_load_sensor": "House-load sensor",
+          "grid_export_sensor": "Live grid export (optional)",
+          "battery_charge_power_sensor": "Live battery charge power (optional)",
+          "write_enabled": "Allow writes to the inverter"
+        },
+        "data_description": {
+          "battery_soc_sensor": "Current battery state of charge in percent.",
+          "house_load_sensor": "Current house load in W.",
+          "grid_export_sensor": "Current export power in W. Improves hysteresis.",
+          "battery_charge_power_sensor": "Current battery charge power in W. Improves charge-limit planning.",
+          "write_enabled": "Enable only after the policy sensors produce plausible values."
+        }
       }
+    },
+    "error": {
+      "forecast_entities_too_few": "Select at least two forecast entities: today and tomorrow.",
+      "forecast_entities_too_many": "Select at most seven forecast entities: today through day 7.",
+      "invalid_inverter_url": "Enter a complete http:// or https:// inverter URL."
     }
   }
 }

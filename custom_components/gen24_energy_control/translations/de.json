@@ -2,39 +2,107 @@
   "config": {
     "step": {
       "user": {
-        "title": "GEN24 Energy Control",
-        "description": "Konservative Home-Assistant-Orchestrierung für Fronius-GEN24-Batteriesteuerung einrichten.",
+        "title": "GEN24 Energy Control – Grundlagen",
+        "description": "Schritt 1 von 3. Zuerst die Verbindung zum Wechselrichter und die Preisquelle festlegen.",
         "data": {
           "inverter_url": "GEN24-Wechselrichter-URL",
-          "price_sensor": "EPEX-Spot-Total-Price-Sensor",
-          "solar_forecast_sensors": "Forecast-Entitäten",
-          "solar_forecast_remaining_today_sensor": "Forecast Rest heute Sensor",
-          "pv_production_today_sensor": "PV-Produktion heute Sensor",
+          "price_sensor": "Strompreis-Sensor"
+        },
+        "data_description": {
+          "inverter_url": "Basis-URL des Fronius GEN24, z. B. http://192.168.178.135. Die Integration schreibt später an /config/timeofuse.",
+          "price_sensor": "Sensor mit Preis-Slots im Attribut 'data', idealerweise der Total-Price-Sensor der EPEX-Spot-Integration."
+        }
+      },
+      "forecast": {
+        "title": "GEN24 Energy Control – PV-Prognose",
+        "description": "Schritt 2 von 3. Jetzt die Solar-Forecasts in der richtigen Reihenfolge auswählen.",
+        "data": {
+          "solar_forecast_sensors": "Tages-Forecast-Sensoren (heute → morgen → weitere Tage)",
+          "solar_forecast_remaining_today_sensor": "Rest-heute-Forecast (optional)",
+          "pv_production_today_sensor": "PV-Erzeugung heute (Fallback, optional)"
+        },
+        "data_description": {
+          "solar_forecast_sensors": "Geordnete Tagesliste mit mindestens 2 und maximal 7 Sensoren. Reihenfolge: heute, morgen, übermorgen, Tag 4, Tag 5, Tag 6, Tag 7. Jeder Sensor muss den Tagesforecast in kWh als State liefern.",
+          "solar_forecast_remaining_today_sensor": "Optionaler Sensor für die direkt vom Forecast-Anbieter berechnete Restproduktion heute in kWh. Dieser Wert wird bevorzugt, weil er robuster ist als Forecast heute minus bisherige Produktion.",
+          "pv_production_today_sensor": "Nur Fallback: tatsächliche PV-Erzeugung heute in kWh. Wird genutzt, wenn kein direkter Rest-heute-Forecast vorhanden ist."
+        }
+      },
+      "live": {
+        "title": "GEN24 Energy Control – Live-Daten & Schreibschutz",
+        "description": "Schritt 3 von 3. Diese Live-Sensoren machen die Policy nachvollziehbar und stabil. Schreiben auf den Wechselrichter bleibt standardmäßig aus.",
+        "data": {
           "battery_soc_sensor": "Batterie-SOC-Sensor",
-          "house_load_sensor": "Hausverbrauchssensor",
-          "grid_export_sensor": "Live-Netzeinspeisungssensor",
-          "battery_charge_power_sensor": "Live-Batterieladeleistungssensor",
+          "house_load_sensor": "Hausverbrauchs-Sensor",
+          "grid_export_sensor": "Netzeinspeisung live (optional)",
+          "battery_charge_power_sensor": "Batterieladeleistung live (optional)",
           "write_enabled": "Schreiben auf den Wechselrichter erlauben"
         },
         "data_description": {
-          "solar_forecast_sensors": "Wie bei der Solar Forecast Card: geordnete Tagesliste. Mindestens 2, maximal 7 Sensoren: heute, morgen, übermorgen, Tag 4, Tag 5, Tag 6, Tag 7. Jeder Sensor muss einen Tagesforecast in kWh als State liefern.",
-          "solar_forecast_remaining_today_sensor": "Optionaler Sensor für die direkt vom Forecast-Anbieter berechnete Restproduktion heute in kWh. Wenn vorhanden, wird dieser Wert bevorzugt, damit ein übertroffener Tagesforecast nicht fälschlich Rest heute = 0 ergibt.",
-          "pv_production_today_sensor": "Tatsächlich erzeugte PV-Energie heute in kWh. Wird nur als Fallback für Rest heute = Forecast heute - Produktion heute verwendet, wenn kein direkter Rest-heute-Forecast verfügbar ist.",
-          "grid_export_sensor": "Aktuelle Einspeiseleistung in W. Wird nur als Hysterese-Signal genutzt, damit kurze Wolken nicht sofort Umschaltungen auslösen.",
-          "battery_charge_power_sensor": "Aktuelle Batterieladeleistung in W. Hilft einzuschätzen, wie weit das Charge-Limit bei drohender Abregelung angehoben werden darf."
+          "battery_soc_sensor": "Aktueller Batterie-Ladestand in Prozent. Ohne diesen Wert bleiben preis- und SOC-basierte Entscheidungen nur im sicheren Fallback.",
+          "house_load_sensor": "Aktuelle Hauslast in W. Wichtig, damit teure und günstige Stromphasen sinnvoll bewertet werden können.",
+          "grid_export_sensor": "Aktuelle Einspeiseleistung in W. Hilft der Hysterese, damit kurze Wolken oder kleine Schwankungen nicht sofort Umschaltungen auslösen.",
+          "battery_charge_power_sensor": "Aktuelle Batterieladeleistung in W. Verbessert die Charge-Limit-Planung bei drohender Abregelung oder PV-Spitzen.",
+          "write_enabled": "Aus Sicherheitsgründen standardmäßig deaktiviert. Erst aktivieren, wenn die berechneten Sensorwerte und Gründe in Home Assistant plausibel aussehen."
         }
       }
     },
     "error": {
       "forecast_entities_too_few": "Bitte mindestens zwei Forecast-Entitäten auswählen: heute und morgen.",
-      "forecast_entities_too_many": "Bitte maximal sieben Forecast-Entitäten auswählen: heute bis Tag 7."
+      "forecast_entities_too_many": "Bitte maximal sieben Forecast-Entitäten auswählen: heute bis Tag 7.",
+      "invalid_inverter_url": "Bitte eine vollständige http://- oder https://-URL des Wechselrichters eingeben."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "GEN24 Energy Control Optionen"
+        "title": "GEN24 Energy Control Optionen – Grundlagen",
+        "description": "Schritt 1 von 3. Verbindung und Preisquelle anpassen.",
+        "data": {
+          "inverter_url": "GEN24-Wechselrichter-URL",
+          "price_sensor": "Strompreis-Sensor"
+        },
+        "data_description": {
+          "inverter_url": "Basis-URL des Fronius GEN24, z. B. http://192.168.178.135.",
+          "price_sensor": "Sensor mit Preis-Slots im Attribut 'data', idealerweise der Total-Price-Sensor der EPEX-Spot-Integration."
+        }
+      },
+      "forecast": {
+        "title": "GEN24 Energy Control Optionen – PV-Prognose",
+        "description": "Schritt 2 von 3. Forecast-Sensoren prüfen und in der richtigen Reihenfolge halten.",
+        "data": {
+          "solar_forecast_sensors": "Tages-Forecast-Sensoren (heute → morgen → weitere Tage)",
+          "solar_forecast_remaining_today_sensor": "Rest-heute-Forecast (optional)",
+          "pv_production_today_sensor": "PV-Erzeugung heute (Fallback, optional)"
+        },
+        "data_description": {
+          "solar_forecast_sensors": "Geordnete Tagesliste mit mindestens 2 und maximal 7 Sensoren. Reihenfolge: heute, morgen, übermorgen, Tag 4, Tag 5, Tag 6, Tag 7.",
+          "solar_forecast_remaining_today_sensor": "Optionaler direkter Rest-heute-Forecast in kWh.",
+          "pv_production_today_sensor": "Fallback für Rest heute = Forecast heute - Produktion heute."
+        }
+      },
+      "live": {
+        "title": "GEN24 Energy Control Optionen – Live-Daten & Schreibschutz",
+        "description": "Schritt 3 von 3. Live-Sensoren und den Schreibschutz anpassen.",
+        "data": {
+          "battery_soc_sensor": "Batterie-SOC-Sensor",
+          "house_load_sensor": "Hausverbrauchs-Sensor",
+          "grid_export_sensor": "Netzeinspeisung live (optional)",
+          "battery_charge_power_sensor": "Batterieladeleistung live (optional)",
+          "write_enabled": "Schreiben auf den Wechselrichter erlauben"
+        },
+        "data_description": {
+          "battery_soc_sensor": "Aktueller Batterie-Ladestand in Prozent.",
+          "house_load_sensor": "Aktuelle Hauslast in W.",
+          "grid_export_sensor": "Aktuelle Einspeiseleistung in W. Verbessert die Hysterese.",
+          "battery_charge_power_sensor": "Aktuelle Batterieladeleistung in W. Verbessert die Charge-Limit-Planung.",
+          "write_enabled": "Nur aktivieren, wenn die Policy-Sensoren plausible Werte liefern."
+        }
       }
+    },
+    "error": {
+      "forecast_entities_too_few": "Bitte mindestens zwei Forecast-Entitäten auswählen: heute und morgen.",
+      "forecast_entities_too_many": "Bitte maximal sieben Forecast-Entitäten auswählen: heute bis Tag 7.",
+      "invalid_inverter_url": "Bitte eine vollständige http://- oder https://-URL des Wechselrichters eingeben."
     }
   }
 }
